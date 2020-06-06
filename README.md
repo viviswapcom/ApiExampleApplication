@@ -20,14 +20,13 @@ But of course you can also customize all the other values as you like ;-)
 
 ## Build and run the demo application
 
-To run this example application just execute the command
+To run the application you can run the command
 
     go run main.go
 
-To build a execution file simply use the following code
+In order to compile this application to run multiple times on your operating system execute
 
     go build main.go
-    ./main.go
 
 ## Packaging and Distribution
 
