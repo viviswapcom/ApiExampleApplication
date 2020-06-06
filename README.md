@@ -27,6 +27,7 @@ To run the application you can run the command
 In order to compile this application to run multiple times on your operating system execute
 
     go build main.go
+    fyne package -icon mylogo.png
 
 ## Packaging and Distribution
 
@@ -41,4 +42,3 @@ Of course you can still run your applications using the standard Go tools if you
     go get fyne.io/fyne/cmd/fyne
 
     go build
-    fyne package -icon mylogo.png
