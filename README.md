@@ -13,4 +13,10 @@ That's all you need!
 
 ## Build and run the demo application
 
-…
+To run the application you can run the command
+
+    go run main.go
+
+In order to compile this application to run multiple times on your operating system execute
+
+    go build main.go
