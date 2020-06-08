@@ -49,3 +49,16 @@ func GetCurrencyPairs() []CurrencyPair {
 	json.Unmarshal(resp, &jsonBody)
 	return jsonBody
 }
+
+func GetPaymentMethods(symbol string) MethodResponse {
+	var jsonBody MethodResponse
+	resp, error := request("GET", "https://api-gateway-dev.omoku.io/payment-methods/"+symbol)
+
+	if error != "" || resp == nil {
+		log.Fatalln(error)
+		return MethodResponse{}
+	}
+
+	json.Unmarshal(resp, &jsonBody)
+	return jsonBody
+}

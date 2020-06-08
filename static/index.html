@@ -1,18 +1,107 @@
 <!DOCTYPE html>
 <html>
     <head>
+        <!-- Import milligram.io (CSS-Framework) -->
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300italic,700,700italic">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/milligram/1.4.0/milligram.css">
 
+        <style>
+            .main-container {
+                width: 600px;
+                height: 800px;
+                padding-top: 20px;
+                padding-bottom: 20px;
+                border: 2px solid red;
+            }
+            .text-center {
+                text-align: center;
+            }
+            .mt {
+                margin-top: 60px;
+            }
+            .mt--small {
+                margin-top: 20px;
+            }
+            .inline-block {
+                display: inline-block;
+            }
+            .hidden {
+                display: none;
+            }
+        </style>
     </head>
     <body>
 
-        TESTTEST
+        <div class="container main-container">
 
-        <button id="$closeBtn">CLOSE X</button>
+            <h2>Omoku public API example</h2>
+
+
+            <div id="stepSymbol">
+                <p class="mt">
+                    Please select your <strong>trading pair</strong> you'd like to execute:
+                </p>
+
+                <div class="text-center mt--small">
+                    {{range .}}
+                        <div>
+                            <button class="button" onclick="selectCurrencyPair('{{.Symbol}}')">{{.SourceCurrency.Name}} ({{.SourceCurrency.Character}}) &rarr; {{.TargetCurrency.Name}} ({{.TargetCurrency.Character}})</button>
+                        </div>
+                    {{end}}
+                </div>
+            </div>
+
+            <div id="stepPaymentMethod" class="hidden">
+                <p class="mt">
+                    Please select the <strong>payment method</strong> you'd like to buy the currency with:
+                </p>
+
+                <div class="text-center mt--small">
+                    <div id="paymentMethods">
+                    </div>
+                </div>
+            </div>
+          
+        </div>
+
+        
 
         <script>
-            document.getElementById ("$closeBtn").addEventListener ("click", () => {
-                quit ();
-            });
+            selectCurrencyPair = async (currencyPair) => {
+                const paymentMethods = await setSymbol (currencyPair);
+                
+                let template = ``;
+                paymentMethods.sourcePaymentMethods.forEach (paymentMethod => {
+                    template += `
+                        <div>
+                            <button class="button" onclick="selectPaymentMethod('${paymentMethod.key}')">${paymentMethod.name}</button>
+                        </div>
+                    `;
+                });
+                document.getElementById ("paymentMethods").innerHTML = template;
+
+                document.getElementById ("stepSymbol").classList.add ("hidden");
+                document.getElementById ("stepPaymentMethod").classList.remove ("hidden");
+            }
+            selectPaymentMethod = async (paymentMethodKey) => {
+                const 
+            }
+
+            // Login user
+            // Confirm login
+
+            // Fetch course
+            // Fetch limits
+            // Select Amount!
+
+            // Fetch connections/contracts
+            // Fetch Payment-Details
+
+            // Create connection
+            // Create Payment-Detail
+
+            // Create order
         </script>
     </body>
 </html>
