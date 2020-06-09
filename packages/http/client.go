@@ -1,6 +1,7 @@
 package http
 
 import (
+	"bytes"
 	"encoding/json"
 	"io/ioutil"
 	"log"
@@ -10,39 +11,54 @@ import (
 	"github.com/tangleMesh/OmokuApiExampleApplication/packages/config"
 )
 
-func request(method string, url string) ([]byte, string) {
+func request(method string, url string, formData string) ([]byte, Error) {
 	client := &http.Client{
 		Timeout: time.Second * 10,
 	}
-	req, _ := http.NewRequest(method, url, nil)
+	req, _ := http.NewRequest(method, url, bytes.NewBuffer([]byte(formData)))
 	config := config.GetConfig()
 	req.Header.Set("X-API-KEY", config.APIKey)
+	req.Header.Set("Content-Type", "application/json")
 	resp, err := client.Do(req)
 
 	// Validate response
 	if err != nil {
-		log.Fatalln(err)
-		return nil, "Error doing the request with url: " + url
+		log.Println(err)
+		return nil, Error{
+			Message: "Error doing the request with url: " + url,
+		}
 	}
 
 	// Validate returned body
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatalln(err)
-		return nil, "Error parsing the response body with url: " + url
+		log.Println(err)
+		return nil, Error{
+			Message: "Error parsing the response body with url: " + url,
+		}
+	}
+
+	// LOG response
+	// fmt.Println("RESPONSE", url, resp, err, string(body))
+
+	// Check if response is an error
+	var errorVar Error = Error{}
+	if string(body)[:8] == "{\"code\":" {
+		json.Unmarshal([]byte(body), &errorVar)
+		return nil, errorVar
 	}
 
 	// Check if response is a valid JSON
-	return []byte(body), ""
+	return []byte(body), Error{}
 	// json.Unmarshal([]byte(body), &jsonBody)
 }
 
 func GetCurrencyPairs() []CurrencyPair {
 	var jsonBody []CurrencyPair
-	resp, error := request("GET", "https://api-gateway-dev.omoku.io/currencies")
+	resp, error := request("GET", "https://api-gateway-dev.omoku.io/currencies", "")
 
-	if error != "" || resp == nil {
-		log.Fatalln(error)
+	if error != (Error{}) || resp == nil {
+		log.Println(error)
 		return nil
 	}
 
@@ -52,13 +68,39 @@ func GetCurrencyPairs() []CurrencyPair {
 
 func GetPaymentMethods(symbol string) MethodResponse {
 	var jsonBody MethodResponse
-	resp, error := request("GET", "https://api-gateway-dev.omoku.io/payment-methods/"+symbol)
+	resp, error := request("GET", "https://api-gateway-dev.omoku.io/payment-methods/"+symbol, "")
 
-	if error != "" || resp == nil {
-		log.Fatalln(error)
+	if error != (Error{}) || resp == nil {
+		log.Println(error)
 		return MethodResponse{}
 	}
 
 	json.Unmarshal(resp, &jsonBody)
 	return jsonBody
+}
+
+func GetLogin(mail string) (Login, Error) {
+	var jsonBody Login
+	resp, err := request("POST", "https://api-gateway-dev.omoku.io/login", "{\"mail\":\""+mail+"\"}")
+
+	if err != (Error{}) || resp == nil {
+		log.Println(err)
+		return Login{}, err
+	}
+
+	json.Unmarshal(resp, &jsonBody)
+	return jsonBody, Error{}
+}
+
+func DoLogin(verificationCode string, sessionToken string) (LoginConfirmation, Error) {
+	var jsonBody LoginConfirmation
+	resp, err := request("POST", "https://api-gateway-dev.omoku.io/confirm-login", "{\"code\":\""+verificationCode+"\", \"sessionToken\":\""+sessionToken+"\"}")
+
+	if err != (Error{}) || resp == nil {
+		log.Println(err)
+		return LoginConfirmation{}, err
+	}
+
+	json.Unmarshal(resp, &jsonBody)
+	return jsonBody, Error{}
 }

@@ -12,7 +12,14 @@
                 height: 800px;
                 padding-top: 20px;
                 padding-bottom: 20px;
-                border: 2px solid red;
+            }
+            .error {
+                color: darkred;
+                background-color: lightcoral;
+                border: 2px solid darkred;
+                padding: 20px;
+                border-radius: 2px;
+                font-weight: bold;
             }
             .text-center {
                 text-align: center;
@@ -36,6 +43,10 @@
         <div class="container main-container">
 
             <h2>Omoku public API example</h2>
+
+            <div id="error" class="hidden error">
+
+            </div>
 
 
             <div id="stepSymbol">
@@ -62,12 +73,46 @@
                     </div>
                 </div>
             </div>
+
+            <div id="stepLoginMail" class="hidden">
+                <p class="mt">
+                    To go on with your order please provide your mail:
+                </p>
+
+                <fieldset>
+                    <label for="loginMail">Your mail</label>
+                    <input type="email" placeholder="your@mail.tld" id="loginMail">
+                    <button class="button-primary" onclick="sendLoginCode ('loginMail')">Send mail</button>
+                </fieldset>
+            </div>
+
+            <div id="stepLoginConfirmation" class="hidden">
+                <p class="mt">
+                    Now please authorize this app to log in with your account by providing the security-code from you mail:
+                </p>
+
+                <fieldset>
+                    <label for="loginCode">Your security-code</label>
+                    <input type="text" placeholder="123456" id="loginCode">
+                    <button class="button-primary" onclick="login ('loginCode')" >Verify code</button>
+                </fieldset>
+            </div>
           
         </div>
 
         
 
         <script>
+            const $error = document.getElementById ("error");
+            showError = (message) => {
+                $error.innerText = message;
+                $error.classList.remove ("hidden");
+            }
+            showNextStep = (previousStepId, nextStepId) => {
+                $error.classList.add ("hidden");
+                document.getElementById (previousStepId).classList.add ("hidden");
+                document.getElementById (nextStepId).classList.remove ("hidden");
+            }
             selectCurrencyPair = async (currencyPair) => {
                 const paymentMethods = await setSymbol (currencyPair);
                 
@@ -81,15 +126,31 @@
                 });
                 document.getElementById ("paymentMethods").innerHTML = template;
 
-                document.getElementById ("stepSymbol").classList.add ("hidden");
-                document.getElementById ("stepPaymentMethod").classList.remove ("hidden");
+                showNextStep ("stepSymbol", "stepPaymentMethod");
             }
             selectPaymentMethod = async (paymentMethodKey) => {
-                const 
-            }
+                const paymentMethod = await setPaymentMethod (paymentMethodKey);
 
-            // Login user
-            // Confirm login
+                showNextStep ("stepPaymentMethod", "stepLoginMail");
+            }
+            sendLoginCode = async (mailId) => {
+                const mail = document.getElementById (mailId).value;
+                const response = await initializeSession (mail);
+                
+                if (response.login == "true") {
+                    return showNextStep ("stepLoginMail", "stepLoginConfirmation");;
+                }
+                return showError (response.err);
+            };
+            login = async (loginCodeId) => {
+                const verificationCode = document.getElementById (loginCodeId).value;
+                const response = await confirmSession (verificationCode);
+
+                if (response.loginConf == "true") {
+                    return showNextStep ("stepLoginConfirmation", "");;
+                }
+                return showError (response.err);
+            };
 
             // Fetch course
             // Fetch limits

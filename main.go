@@ -28,6 +28,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"net/url"
 	"strconv"
 	"time"
 
@@ -65,16 +66,65 @@ func startWebserver(port int) {
 }
 
 func openWebview(debug bool, appTitle string, webUrl string, order *order.Order) {
+	var methods omokuClient.MethodResponse
 	time.Sleep(2 * time.Second)
 	w := webview.New(debug)
 	defer w.Destroy()
 	w.SetTitle(appTitle)
 	w.Bind("setSymbol", func(symbol string) omokuClient.MethodResponse {
 		fmt.Println("Selected Symbol:", symbol)
-		order.Symbol = symbol
-		methods := omokuClient.GetPaymentMethods(order.Symbol)
-		fmt.Println(methods)
+
+		// Save currency-pair
+		currencyPairs := omokuClient.GetCurrencyPairs()
+		for _, v := range currencyPairs {
+			if v.Symbol == symbol {
+				order.CurrencyPair = v
+			}
+		}
+
+		// Load payment-methods
+		methods = omokuClient.GetPaymentMethods(order.CurrencyPair.Symbol)
 		return methods
+	})
+	w.Bind("setPaymentMethod", func(paymentMethodKey string) {
+		fmt.Println("Selected Payment-method:", paymentMethodKey)
+
+		for _, v := range methods.SourcePaymentMethods {
+			if v.Key == paymentMethodKey {
+				order.SourcePaymentMethod = v
+			}
+		}
+		order.TargetPaymentMethod = methods.TargetPaymentMethods[0]
+	})
+	w.Bind("initializeSession", func(mail string) url.Values {
+		fmt.Println("Input login mail:", mail)
+
+		login, err := omokuClient.GetLogin(mail)
+		success := "false"
+		if login.Success {
+			success = "true"
+			order.SessionToken = login.SessionToken
+		}
+		return url.Values{
+			"err":   {err.Message},
+			"login": {success},
+		}
+	})
+	w.Bind("confirmSession", func(verificationCode string) url.Values {
+		fmt.Println("Input verification code:", verificationCode)
+
+		loginConf, err := omokuClient.DoLogin(verificationCode, order.SessionToken)
+		success := "false"
+		if loginConf.Success {
+			success = "true"
+			order.SessionSecret = loginConf.SessionSecret
+		}
+
+		fmt.Println(order)
+		return url.Values{
+			"err":       {err.Message},
+			"loginConf": {success},
+		}
 	})
 	w.Navigate(webUrl)
 	w.SetSize(600, 800, webview.HintNone)
