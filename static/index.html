@@ -97,6 +97,23 @@
                     <button class="button-primary" onclick="login ('loginCode')" >Verify code</button>
                 </fieldset>
             </div>
+
+            <div id="stepAmount" class="hidden">
+                <p class="mt">
+                    Your personal limit is: <strong><span id="limitAmount"></span></strong><br />
+                    The actual course of the currencies are <strong><span id="sourceCourse"></span></strong> and <strong><span id="targetCourse"></span></strong>
+                </p>
+                <p class="mt--small">
+                    Please chose the amount you'd like to exchange:
+                </p>
+
+                <fieldset>
+                    <label for="exchangeAmount">Your exchange amount</label>
+                    <input type="number" placeholder="10.00" id="exchangeAmount" onkeyup="amountChanged ('exchangeAmount')">
+                    <blockquote id="exchangeTargetAmount"></blockquote>
+                    <button class="button-primary" onclick="amountSubmit('exchangeAmount')" >Select amount</button>
+                </fieldset>
+            </div>
           
         </div>
 
@@ -104,16 +121,16 @@
 
         <script>
             const $error = document.getElementById ("error");
-            showError = (message) => {
+            const showError = (message) => {
                 $error.innerText = message;
                 $error.classList.remove ("hidden");
             }
-            showNextStep = (previousStepId, nextStepId) => {
+            const showNextStep = (previousStepId, nextStepId) => {
                 $error.classList.add ("hidden");
                 document.getElementById (previousStepId).classList.add ("hidden");
                 document.getElementById (nextStepId).classList.remove ("hidden");
             }
-            selectCurrencyPair = async (currencyPair) => {
+            const selectCurrencyPair = async (currencyPair) => {
                 const paymentMethods = await setSymbol (currencyPair);
                 
                 let template = ``;
@@ -128,12 +145,12 @@
 
                 showNextStep ("stepSymbol", "stepPaymentMethod");
             }
-            selectPaymentMethod = async (paymentMethodKey) => {
+            const selectPaymentMethod = async (paymentMethodKey) => {
                 const paymentMethod = await setPaymentMethod (paymentMethodKey);
 
                 showNextStep ("stepPaymentMethod", "stepLoginMail");
             }
-            sendLoginCode = async (mailId) => {
+            const sendLoginCode = async (mailId) => {
                 const mail = document.getElementById (mailId).value;
                 const response = await initializeSession (mail);
                 
@@ -142,19 +159,46 @@
                 }
                 return showError (response.err);
             };
-            login = async (loginCodeId) => {
+            const login = async (loginCodeId) => {
                 const verificationCode = document.getElementById (loginCodeId).value;
                 const response = await confirmSession (verificationCode);
 
                 if (response.loginConf == "true") {
-                    return showNextStep ("stepLoginConfirmation", "");;
+                    await loadAmountDetails ();
+                    return showNextStep ("stepLoginConfirmation", "stepAmount");
                 }
                 return showError (response.err);
             };
 
-            // Fetch course
-            // Fetch limits
-            // Select Amount!
+            let targetCurrency = "";
+            let sourceCourse = 0;
+            let targetCourse = 0;
+            const loadAmountDetails = async () => {
+                const course = await getCourse ();
+                const limit = await getLimit ();
+
+                targetCurrency = course.targetCourse.currencyShort;
+                targetCourse = course.targetCourse.course;
+                sourceCourse = course.sourceCourse.course;
+                document.getElementById ("limitAmount").innerText = limit.limit + " " + limit.symbol;
+                document.getElementById ("sourceCourse").innerText = course.sourceCourse.course + " " + course.sourceCourse.currencyShort;
+                document.getElementById ("targetCourse").innerText = course.targetCourse.course + " " + course.targetCourse.currencyShort;
+                document.getElementById ("exchangeAmount").min = 0;
+                document.getElementById ("exchangeAmount").max = limit.limit;
+                document.getElementById ("exchangeAmount").placeholder = course.sourceCourse.currencyShort;
+            }
+
+            const amountChanged = async (inputId) => {
+                document.getElementById ("exchangeTargetAmount").innerText = "Actual the amount will convert to " + (document.getElementById (inputId).value * sourceCourse) + " " + targetCurrency + ".";
+            }
+
+
+            const amountSubmit = async (inputId) => {
+                const amount = parseFloat (document.getElementById (inputId).value);
+                const response = await setAmount (amount);
+
+                return showNextStep ("stepAmount", "");
+            };
 
             // Fetch connections/contracts
             // Fetch Payment-Details

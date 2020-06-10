@@ -11,4 +11,5 @@ type Order struct {
 	SessionToken        string
 	SessionSecret       string
 	TwoFactor           bool
+	Amount              float64
 }

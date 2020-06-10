@@ -96,12 +96,24 @@ func openWebview(debug bool, appTitle string, webUrl string, order *order.Order)
 			order.SessionSecret = loginConf.SessionSecret
 		}
 
-		fmt.Println(order)
 		return url.Values{
 			"err":       {err.Message},
 			"loginConf": {success},
 		}
 	})
+	w.Bind("getCourse", func() omokuClient.CourseResponse {
+		course, _ := omokuClient.GetCourse(order.CurrencyPair.Symbol)
+		return course
+	})
+	w.Bind("getLimit", func() omokuClient.Limit {
+		limit, _ := omokuClient.GetLimit(order.CurrencyPair.Symbol, order.SessionToken, order.SessionSecret)
+		return limit
+	})
+	w.Bind("setAmount", func(amount float64) {
+		fmt.Println("Input amount:", amount)
+		order.Amount = amount
+	})
+
 	w.Navigate(webUrl)
 	w.SetSize(600, 800, webview.HintNone)
 	w.Run()
