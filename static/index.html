@@ -114,6 +114,14 @@
                     <button class="button-primary" onclick="amountSubmit('exchangeAmount')" >Select amount</button>
                 </fieldset>
             </div>
+
+            <div id="stepPaymentDetails" class="hidden">
+                <p class="mt">
+                    Please chose the detail or connnection you'd like to execute the payment from:
+                </p>
+
+                <div id="testtt"></div>
+            </div>
           
         </div>
 
@@ -197,7 +205,14 @@
                 const amount = parseFloat (document.getElementById (inputId).value);
                 const response = await setAmount (amount);
 
-                return showNextStep ("stepAmount", "");
+                const details = await getDetails ();
+                const connections = await getConnectionns ();
+                document.getElementById ("testtt").innerText = JSON.stringify ({
+                    connections,
+                    details,
+                });
+
+                return showNextStep ("stepAmount", "stepPaymentDetails");
             };
 
             // Fetch connections/contracts

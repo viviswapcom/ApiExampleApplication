@@ -113,6 +113,14 @@ func openWebview(debug bool, appTitle string, webUrl string, order *order.Order)
 		fmt.Println("Input amount:", amount)
 		order.Amount = amount
 	})
+	w.Bind("getDetails", func() omokuClient.DetailResponse {
+		details, _ := omokuClient.GetDetails(order.CurrencyPair.Symbol, order.SessionToken, order.SessionSecret)
+		return details
+	})
+	w.Bind("getConnectionns", func() omokuClient.ConnectionResponse {
+		connections, _ := omokuClient.GetConnections(order.CurrencyPair.Symbol, order.SessionToken, order.SessionSecret)
+		return connections
+	})
 
 	w.Navigate(webUrl)
 	w.SetSize(600, 800, webview.HintNone)

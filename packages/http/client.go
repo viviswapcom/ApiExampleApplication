@@ -132,3 +132,29 @@ func GetLimit(symbol string, sessionToken string, sessionSecret string) (Limit, 
 	json.Unmarshal(resp, &jsonBody)
 	return jsonBody, Error{}
 }
+
+func GetDetails(symbol string, sessionToken string, sessionSecret string) (DetailResponse, Error) {
+	var jsonBody DetailResponse
+	resp, err := request("GET", "https://api-gateway-dev.omoku.io/payment-details/"+symbol, "", sessionToken, sessionSecret)
+
+	if err != (Error{}) || resp == nil {
+		log.Println(err)
+		return DetailResponse{}, err
+	}
+
+	json.Unmarshal(resp, &jsonBody)
+	return jsonBody, Error{}
+}
+
+func GetConnections(symbol string, sessionToken string, sessionSecret string) (ConnectionResponse, Error) {
+	var jsonBody ConnectionResponse
+	resp, err := request("GET", "https://api-gateway-dev.omoku.io/connections/"+symbol, "", sessionToken, sessionSecret)
+
+	if err != (Error{}) || resp == nil {
+		log.Println(err)
+		return ConnectionResponse{}, err
+	}
+
+	json.Unmarshal(resp, &jsonBody)
+	return jsonBody, Error{}
+}
