@@ -36,6 +36,14 @@
             .hidden {
                 display: none;
             }
+            .button {
+                text-overflow: ellipsis;
+                height: auto;
+                max-width: 100%;
+                line-height: 2;
+                overflow: hidden;
+                padding: 12px;
+            }
         </style>
     </head>
     <body>
@@ -76,7 +84,7 @@
 
             <div id="stepLoginMail" class="hidden">
                 <p class="mt">
-                    To go on with your order please provide your mail:
+                    To go on with your order please provide your <stronng>mail</stronng>:
                 </p>
 
                 <fieldset>
@@ -88,7 +96,7 @@
 
             <div id="stepLoginConfirmation" class="hidden">
                 <p class="mt">
-                    Now please authorize this app to log in with your account by providing the security-code from you mail:
+                    Now please authorize this app to log in with your account by providing the <strong>security-code</strong> from you mail:
                 </p>
 
                 <fieldset>
@@ -104,7 +112,7 @@
                     The actual course of the currencies are <strong><span id="sourceCourse"></span></strong> and <strong><span id="targetCourse"></span></strong>
                 </p>
                 <p class="mt--small">
-                    Please chose the amount you'd like to exchange:
+                    Please chose the <strong>amount</strong> you'd like to exchange:
                 </p>
 
                 <fieldset>
@@ -117,17 +125,38 @@
 
             <div id="stepPaymentDetails" class="hidden">
                 <p class="mt">
-                    Please chose the detail or connnection you'd like to execute the payment from:
+                    Please chose the <strong>detail</strong> you'd like to execute the payment with:
                 </p>
 
-                <div id="testtt"></div>
+                <div class="text-center mt--small">
+                    <div id="paymentDetails">
+                    </div>
+                </div>
+            </div>
+
+            <div id="stepConnections" class="hidden">
+                <p class="mt">
+                    Please chose the <strong>connnection</strong> you'd like to execute the payment with:
+                </p>
+
+                <div class="text-center mt--small">
+                    <div id="connections">
+                    </div>
+                </div>
             </div>
           
         </div>
 
+        <div id="TESTLOG" style="color: red;"></div>
+
         
 
         <script>
+            let targetCurrency = "";
+            let sourceCourse = 0;
+            let targetCourse = 0;
+            let isConnnectionRequired = false;
+
             const $error = document.getElementById ("error");
             const showError = (message) => {
                 $error.innerText = message;
@@ -155,6 +184,7 @@
             }
             const selectPaymentMethod = async (paymentMethodKey) => {
                 const paymentMethod = await setPaymentMethod (paymentMethodKey);
+                isConnnectionRequired = paymentMethod.isConnnectionRequired;
 
                 showNextStep ("stepPaymentMethod", "stepLoginMail");
             }
@@ -177,10 +207,6 @@
                 }
                 return showError (response.err);
             };
-
-            let targetCurrency = "";
-            let sourceCourse = 0;
-            let targetCourse = 0;
             const loadAmountDetails = async () => {
                 const course = await getCourse ();
                 const limit = await getLimit ();
@@ -195,25 +221,58 @@
                 document.getElementById ("exchangeAmount").max = limit.limit;
                 document.getElementById ("exchangeAmount").placeholder = course.sourceCourse.currencyShort;
             }
-
             const amountChanged = async (inputId) => {
                 document.getElementById ("exchangeTargetAmount").innerText = "Actual the amount will convert to " + (document.getElementById (inputId).value * sourceCourse) + " " + targetCurrency + ".";
             }
 
+            const renderConnections = async () => {
+                const connectionResponse = await getConnections ();
 
+                let template = ``;
+                connectionResponse.connections.forEach (connection => {
+                    template += `
+                        <div>
+                            <button class="button" onclick="selectConnection('${connection.identifier}')">${connection.identifier}<br /><small>(${connection.source.paymentDetail.address} -> ${connection.target.paymentDetail.address})</small></button>
+                        </div>
+                    `;
+                });
+                document.getElementById ("connections").innerHTML = template;
+            };
+            const renderPaymentDetails = async () => {
+                const detailResponse = await getDetails ();
+
+                document.getElementById ("TESTLOG").innerHTML = JSON.stringify ({
+                    detailResponse,
+                });
+
+                let template = ``;
+                detailResponse.paymentDetails.forEach (detail => {
+                    template += `
+                        <div>
+                            <button class="button" onclick="selectPaymentDetail('${detail.id}')">${detail.address}</button>
+                        </div>
+                    `;
+                });
+                document.getElementById ("paymentDetails").innerHTML = template;
+            };
             const amountSubmit = async (inputId) => {
                 const amount = parseFloat (document.getElementById (inputId).value);
                 const response = await setAmount (amount);
 
-                const details = await getDetails ();
-                const connections = await getConnectionns ();
-                document.getElementById ("testtt").innerText = JSON.stringify ({
-                    connections,
-                    details,
-                });
-
+                if (isConnnectionRequired) {
+                    await renderConnections ();
+                    return showNextStep ("stepAmount", "stepConnections");
+                } 
+                await renderPaymentDetails ();
                 return showNextStep ("stepAmount", "stepPaymentDetails");
             };
+
+            const selectConnection = async (identifier) => {
+                
+            }
+            const selectPaymentDetail = async (identifier) => {
+
+            }
 
             // Fetch connections/contracts
             // Fetch Payment-Details

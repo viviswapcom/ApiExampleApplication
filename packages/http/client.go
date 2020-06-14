@@ -133,9 +133,9 @@ func GetLimit(symbol string, sessionToken string, sessionSecret string) (Limit, 
 	return jsonBody, Error{}
 }
 
-func GetDetails(symbol string, sessionToken string, sessionSecret string) (DetailResponse, Error) {
+func GetDetails(currencyShort string, sessionToken string, sessionSecret string) (DetailResponse, Error) {
 	var jsonBody DetailResponse
-	resp, err := request("GET", "https://api-gateway-dev.omoku.io/payment-details/"+symbol, "", sessionToken, sessionSecret)
+	resp, err := request("GET", "https://api-gateway-dev.omoku.io/payment-details/"+currencyShort, "", sessionToken, sessionSecret)
 
 	if err != (Error{}) || resp == nil {
 		log.Println(err)

@@ -62,7 +62,7 @@ func openWebview(debug bool, appTitle string, webUrl string, order *order.Order)
 		methods = omokuClient.GetPaymentMethods(order.CurrencyPair.Symbol)
 		return methods
 	})
-	w.Bind("setPaymentMethod", func(paymentMethodKey string) {
+	w.Bind("setPaymentMethod", func(paymentMethodKey string) omokuClient.Method {
 		fmt.Println("Selected Payment-method:", paymentMethodKey)
 
 		for _, v := range methods.SourcePaymentMethods {
@@ -71,6 +71,8 @@ func openWebview(debug bool, appTitle string, webUrl string, order *order.Order)
 			}
 		}
 		order.TargetPaymentMethod = methods.TargetPaymentMethods[0]
+
+		return order.SourcePaymentMethod
 	})
 	w.Bind("initializeSession", func(mail string) url.Values {
 		fmt.Println("Input login mail:", mail)
@@ -114,10 +116,10 @@ func openWebview(debug bool, appTitle string, webUrl string, order *order.Order)
 		order.Amount = amount
 	})
 	w.Bind("getDetails", func() omokuClient.DetailResponse {
-		details, _ := omokuClient.GetDetails(order.CurrencyPair.Symbol, order.SessionToken, order.SessionSecret)
+		details, _ := omokuClient.GetDetails(order.CurrencyPair.SourceCurrency.Short, order.SessionToken, order.SessionSecret)
 		return details
 	})
-	w.Bind("getConnectionns", func() omokuClient.ConnectionResponse {
+	w.Bind("getConnections", func() omokuClient.ConnectionResponse {
 		connections, _ := omokuClient.GetConnections(order.CurrencyPair.Symbol, order.SessionToken, order.SessionSecret)
 		return connections
 	})

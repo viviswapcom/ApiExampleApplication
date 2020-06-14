@@ -14,5 +14,10 @@ type Connection struct {
 
 type ConnectionResponse struct {
 	Symbol       string       `json:"symbol"`
-	Connnections []Connection `json:"contracts"`
+	Connnections []Connection `json:"connections"`
+}
+
+type CreateConnectionResponse struct {
+	Symbol       string     `json:"symbol"`
+	Connnections Connection `json:"connection"`
 }
