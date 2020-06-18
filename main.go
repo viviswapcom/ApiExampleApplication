@@ -123,6 +123,62 @@ func openWebview(debug bool, appTitle string, webUrl string, order *order.Order)
 		connections, _ := omokuClient.GetConnections(order.CurrencyPair.Symbol, order.SessionToken, order.SessionSecret)
 		return connections
 	})
+	w.Bind("setConnection", func(connectionIdentifier string) {
+		fmt.Println("Input connection:", connectionIdentifier)
+
+		// Save connection
+		connections, _ := omokuClient.GetConnections(order.CurrencyPair.Symbol, order.SessionToken, order.SessionSecret)
+		for _, v := range connections.Connnections {
+			if v.ID == connectionIdentifier {
+				order.Connection = v
+			}
+		}
+	})
+	w.Bind("setSourcePaymentDetail", func(paymentDetailIdentifier string) omokuClient.DetailResponse {
+		fmt.Println("Input source-payment-detail:", paymentDetailIdentifier)
+
+		// Save source payment-detail
+		details, _ := omokuClient.GetDetails(order.CurrencyPair.SourceCurrency.Short, order.SessionToken, order.SessionSecret)
+		for _, v := range details.Details {
+			if v.ID == paymentDetailIdentifier {
+				order.SourcePaymentDetail = v
+			}
+		}
+
+		targetDetails, _ := omokuClient.GetDetails(order.CurrencyPair.TargetCurrency.Short, order.SessionToken, order.SessionSecret)
+		return targetDetails
+	})
+	w.Bind("setTargetPaymentDetail", func(paymentDetailIdentifier string) {
+		fmt.Println("Input target-payment-detail:", paymentDetailIdentifier)
+
+		// Save source payment-detail
+		details, _ := omokuClient.GetDetails(order.CurrencyPair.TargetCurrency.Short, order.SessionToken, order.SessionSecret)
+		for _, v := range details.Details {
+			if v.ID == paymentDetailIdentifier {
+				order.TargetPaymentDetail = v
+			}
+		}
+	})
+	w.Bind("createDetail", func(isTarget bool, address string) url.Values {
+		fmt.Println("Input new address:", address, isTarget)
+
+		currencyShort := order.CurrencyPair.SourceCurrency.Short
+		if isTarget {
+			currencyShort = order.CurrencyPair.TargetCurrency.Short
+		}
+
+		newDetailResponse, err := omokuClient.CreateDetail(currencyShort, address, order.SessionToken, order.SessionSecret)
+		success := "false"
+		if newDetailResponse.Detail.ID != "" {
+			success = "true"
+		}
+
+		return url.Values{
+			"err":        {err.Message},
+			"success":    {success},
+			"identifier": {newDetailResponse.Detail.ID},
+		}
+	})
 
 	w.Navigate(webUrl)
 	w.SetSize(600, 800, webview.HintNone)

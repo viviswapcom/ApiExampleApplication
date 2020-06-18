@@ -12,4 +12,7 @@ type Order struct {
 	SessionSecret       string
 	TwoFactor           bool
 	Amount              float64
+	Connection          http.Connection
+	SourcePaymentDetail http.Detail
+	TargetPaymentDetail http.Detail
 }

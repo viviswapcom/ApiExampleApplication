@@ -122,7 +122,7 @@ func GetCourse(symbol string) (CourseResponse, Error) {
 
 func GetLimit(symbol string, sessionToken string, sessionSecret string) (Limit, Error) {
 	var jsonBody Limit
-	resp, err := request("POST", "https://api-gateway-dev.omoku.io/limits/"+symbol, "", sessionToken, sessionSecret)
+	resp, err := request("GET", "https://api-gateway-dev.omoku.io/limits/"+symbol, "", sessionToken, sessionSecret)
 
 	if err != (Error{}) || resp == nil {
 		log.Println(err)
@@ -153,6 +153,19 @@ func GetConnections(symbol string, sessionToken string, sessionSecret string) (C
 	if err != (Error{}) || resp == nil {
 		log.Println(err)
 		return ConnectionResponse{}, err
+	}
+
+	json.Unmarshal(resp, &jsonBody)
+	return jsonBody, Error{}
+}
+
+func CreateDetail(currencyShort string, address string, sessionToken string, sessionSecret string) (CreateDetailResponse, Error) {
+	var jsonBody CreateDetailResponse
+	resp, err := request("POST", "https://api-gateway-dev.omoku.io/payment-details/"+currencyShort, "{\"address\": \""+address+"\"}", sessionToken, sessionSecret)
+
+	if err != (Error{}) || resp == nil {
+		log.Println(err)
+		return CreateDetailResponse{}, err
 	}
 
 	json.Unmarshal(resp, &jsonBody)

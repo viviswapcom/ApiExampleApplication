@@ -132,6 +132,21 @@
                     <div id="paymentDetails">
                     </div>
                 </div>
+                <input type="text" placeholder="new address" id="newPaymentDetail" />
+                <button onclick="newPaymentDetail()">Use new detail</button>
+            </div>
+
+            <div id="stepTargetPaymentDetails" class="hidden">
+                <p class="mt">
+                    Please chose the <strong>detail</strong> you'd like to execute the payment to:
+                </p>
+
+                <div class="text-center mt--small">
+                    <div id="targetPaymentDetails">
+                    </div>
+                </div>
+                <input type="text" placeholder="new address" id="newTargetPaymentDetail" />
+                <button onclick="newPaymentDetail(true)">Use new detail</button>
             </div>
 
             <div id="stepConnections" class="hidden">
@@ -142,6 +157,16 @@
                 <div class="text-center mt--small">
                     <div id="connections">
                     </div>
+                </div>
+            </div>
+
+            <div id="stepCreateOrder" class="hidden">
+                <p class="mt">
+                    Please review your order details and confirm your order creation:
+                </p>
+
+                <div class="text-center mt--small">
+                    Somethinng to do ;)
                 </div>
             </div>
           
@@ -162,6 +187,9 @@
                 $error.innerText = message;
                 $error.classList.remove ("hidden");
             }
+            const log = (content) => {
+                document.getElementById ("TESTLOG").innerText = document.getElementById ("TESTLOG").innerText + "---" + content;
+            } 
             const showNextStep = (previousStepId, nextStepId) => {
                 $error.classList.add ("hidden");
                 document.getElementById (previousStepId).classList.add ("hidden");
@@ -238,28 +266,27 @@
                 });
                 document.getElementById ("connections").innerHTML = template;
             };
-            const renderPaymentDetails = async () => {
-                const detailResponse = await getDetails ();
-
-                document.getElementById ("TESTLOG").innerHTML = JSON.stringify ({
-                    detailResponse,
-                });
-
+            const renderPaymentDetails = async (detailResponse = null) => {
+                const isSource = !detailResponse;
+                if (isSource) {
+                    detailResponse = await getDetails ();
+                }
                 let template = ``;
                 detailResponse.paymentDetails.forEach (detail => {
                     template += `
                         <div>
-                            <button class="button" onclick="selectPaymentDetail('${detail.id}')">${detail.address}</button>
+                            <button class="button" onclick="select${ isSource ? "" : "Target" }PaymentDetail('${detail.id}')">${detail.address}</button>
                         </div>
                     `;
                 });
-                document.getElementById ("paymentDetails").innerHTML = template;
+                document.getElementById (isSource ? "paymentDetails" : "targetPaymentDetails").innerHTML = template;
             };
             const amountSubmit = async (inputId) => {
                 const amount = parseFloat (document.getElementById (inputId).value);
                 const response = await setAmount (amount);
 
-                if (isConnnectionRequired) {
+                // TODO: remove !
+                if (!isConnnectionRequired) {
                     await renderConnections ();
                     return showNextStep ("stepAmount", "stepConnections");
                 } 
@@ -268,17 +295,31 @@
             };
 
             const selectConnection = async (identifier) => {
-                
+                await setConnection (identifier);
+                return showNextStep ("stepConnections", "stepCreateOrder");
             }
             const selectPaymentDetail = async (identifier) => {
-
+                const targetPaymentDetails = await setSourcePaymentDetail (identifier);
+                await renderPaymentDetails (targetPaymentDetails);
+                return showNextStep ("stepPaymentDetails", "stepTargetPaymentDetails");
+            }
+            const selectTargetPaymentDetail = async (identifier) => {
+                await setTargetPaymentDetail (identifier);
+                return showNextStep ("stepTargetPaymentDetails", "stepCreateOrder");
             }
 
-            // Fetch connections/contracts
-            // Fetch Payment-Details
-
-            // Create connection
-            // Create Payment-Detail
+            const newPaymentDetail = async (isTarget = false) => {
+                const result = await createDetail (isTarget, document.getElementById (!isTarget ? "newPaymentDetail" : "newTargetPaymentDetail").value);
+                if (result.success [0] == "true") {
+                    if (!isTarget) {
+                        await selectPaymentDetail (result.identifier [0]);
+                    } else {
+                        await selectTargetPaymentDetail (result.identifier [0]);
+                    }
+                    return;
+                }
+                return showError (result.err);
+            }
 
             // Create order
         </script>

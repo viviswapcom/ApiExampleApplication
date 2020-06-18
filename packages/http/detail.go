@@ -12,5 +12,5 @@ type DetailResponse struct {
 
 type CreateDetailResponse struct {
 	CurrencyShort string `json:"currencyShort"`
-	Details       Detail `json:"paymentDetail"`
+	Detail        Detail `json:"paymentDetail"`
 }
