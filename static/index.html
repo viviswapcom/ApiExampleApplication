@@ -165,9 +165,52 @@
                     Please review your order details and confirm your order creation:
                 </p>
 
-                <div class="text-center mt--small">
-                    Somethinng to do ;)
-                </div>
+                <table id="orderTable">
+                    <thead>
+                      <tr>
+                        <th>Field</th>
+                        <th>Value</th>
+                      </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+                <button onclick="initializeOrder()">Initialize order</button>
+            </div>
+
+            <div id="stepDisplayConnection" class="hidden">
+                <p class="mt">
+                    You can create a new Order by creating a transaction to the details below
+                </p>
+
+                <table id="conenctionTable">
+                    <thead>
+                      <tr>
+                        <th>Field</th>
+                        <th>Value</th>
+                      </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+
+            <div id="stepConfirmOrder" class="hidden">
+                <p class="mt">
+                    Now please authorize this app to create the order with your account by providing the <strong>security-code</strong> from your mail:
+                </p>
+
+                <div id="order-id"></div>
+
+                <fieldset>
+                    <label for="orderCode">Your security-code</label>
+                    <input type="text" placeholder="123456" id="orderCode">
+                    <button class="button-primary" onclick="confirmOrder ()" >Verify code</button>
+                </fieldset>
+            </div>
+
+            <div id="stepSuccess" class="hidden">
+                <p class="mt">
+                    Order has been created successfully!
+                </p>
             </div>
           
         </div>
@@ -188,7 +231,7 @@
                 $error.classList.remove ("hidden");
             }
             const log = (content) => {
-                document.getElementById ("TESTLOG").innerText = document.getElementById ("TESTLOG").innerText + "---" + content;
+                document.getElementById ("TESTLOG").innerText = document.getElementById ("TESTLOG").innerText + "---" + JSON.stringify (content);
             } 
             const showNextStep = (previousStepId, nextStepId) => {
                 $error.classList.add ("hidden");
@@ -285,10 +328,10 @@
                 const amount = parseFloat (document.getElementById (inputId).value);
                 const response = await setAmount (amount);
 
-                // TODO: remove !
-                if (!isConnnectionRequired) {
+                if (isConnnectionRequired) {
                     await renderConnections ();
                     return showNextStep ("stepAmount", "stepConnections");
+                    isConnectionOrder = true;
                 } 
                 await renderPaymentDetails ();
                 return showNextStep ("stepAmount", "stepPaymentDetails");
@@ -296,6 +339,7 @@
 
             const selectConnection = async (identifier) => {
                 await setConnection (identifier);
+                await loadOrderDetails ();
                 return showNextStep ("stepConnections", "stepCreateOrder");
             }
             const selectPaymentDetail = async (identifier) => {
@@ -305,6 +349,7 @@
             }
             const selectTargetPaymentDetail = async (identifier) => {
                 await setTargetPaymentDetail (identifier);
+                await loadOrderDetails ();
                 return showNextStep ("stepTargetPaymentDetails", "stepCreateOrder");
             }
 
@@ -320,8 +365,74 @@
                 }
                 return showError (result.err);
             }
+            const loadOrderDetails = async () => {
+                const orderDetails = await getOrderDetails ();
+                const $tableBody = document.getElementById ("orderTable").getElementsByTagName('tbody')[0];
+                
+                let valuePairs = {};
+                valuePairs ["Currency pair"] = orderDetails.CurrencyPair.symbol;
+                valuePairs ["Amount"] = orderDetails.Amount;
+                valuePairs ["Source payment method"] = orderDetails.SourcePaymentMethod.name;
+                valuePairs ["Target payment method"] = orderDetails.TargetPaymentMethod.name;
+                
+                if (orderDetails.Connection.identifier) {
+                    valuePairs ["Connection"] = orderDetails.Connection.identifier;
+                } else {
+                    valuePairs ["Source payment detail"] = orderDetails.SourcePaymentDetail.address;
+                    valuePairs ["Target payment detail"] = orderDetails.TargetPaymentDetail.address;
+                }
 
-            // Create order
+                let template = ``;
+                for (const key in valuePairs) {
+                    template = `${template}<tr><td>${key}</td><td>${valuePairs [key]}</td></tr>`;
+                }
+                $tableBody.innerHTML = template;
+            };
+            const initializeOrder = async () => {
+                if (isConnnectionRequired) {
+                    await showConnectionDetails ();
+                    return showNextStep ("stepCreateOrder", "stepDisplayConnection");
+                }
+
+                const response = await initializeNewOrder ();
+
+                if (response.success [0] == "true") {
+                    document.getElementById ("order-id").innerText = "Order-Identifier: " + response.orderId [0];
+                    return showNextStep ("stepCreateOrder", "stepConfirmOrder");
+                }x
+                return showError (response.err);
+            }
+            const confirmOrder = async () => {
+                const orderCode = document.getElementById ("orderCode").value;
+                const response = await confirmNewOrder (orderCode)
+
+                if (response.success [0] == "true") {
+                    return showNextStep ("stepConfirmOrder", "stepSuccess");
+                }
+                return showError (response.err);
+            }
+
+            const showConnectionDetails = async () => {
+                const orderDetails = await getOrderDetails ();
+                const connectionDetails = orderDetails.Connection;
+                log (connectionDetails);
+                const $tableBody = document.getElementById ("conenctionTable").getElementsByTagName('tbody')[0];
+                
+                let valuePairs = {};
+                valuePairs ["Identifier"] = connectionDetails.identifier;
+                valuePairs ["Amount"] = orderDetails.Amount;
+                if (connectionDetails.source.transactionDetail) {
+                    for (const key in connectionDetails.source.transactionDetail) {
+                        valuePairs [key] = connectionDetails.source.transactionDetail [key];
+                    }
+                }
+
+                let template = ``;
+                for (const key in valuePairs) {
+                    template = `${template}<tr><td>${key}</td><td>${valuePairs [key]}</td></tr>`;
+                }
+                $tableBody.innerHTML = template;
+            }
         </script>
     </body>
 </html>

@@ -3,6 +3,7 @@ package http
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -166,6 +167,32 @@ func CreateDetail(currencyShort string, address string, sessionToken string, ses
 	if err != (Error{}) || resp == nil {
 		log.Println(err)
 		return CreateDetailResponse{}, err
+	}
+
+	json.Unmarshal(resp, &jsonBody)
+	return jsonBody, Error{}
+}
+
+func InitOrder(symbol string, amount float64, sourcePaymentMethodKey string, sourcePaymentDetailId string, targetPaymentMethodKey string, targetPaymentDetailId string, sessionToken string, sessionSecret string) (OrderResponse, Error) {
+	var jsonBody OrderResponse
+	resp, err := request("POST", "https://api-gateway-dev.omoku.io/orders", "{\"symbol\": \""+symbol+"\", \"amount\": "+fmt.Sprintf("%g", amount)+", \"source\": { \"paymentMethod\": { \"key\": \""+sourcePaymentMethodKey+"\" }, \"paymentDetail\": { \"id\": \""+sourcePaymentDetailId+"\" }}, \"target\": { \"paymentMethod\": { \"key\": \""+targetPaymentMethodKey+"\" }, \"paymentDetail\": { \"id\": \""+targetPaymentDetailId+"\" }} }", sessionToken, sessionSecret)
+
+	if err != (Error{}) || resp == nil {
+		log.Println(err)
+		return OrderResponse{}, err
+	}
+
+	json.Unmarshal(resp, &jsonBody)
+	return jsonBody, Error{}
+}
+
+func ConnfirmOrder(id string, confirmationCode string, sessionToken string, sessionSecret string) (ConfirmOrderResponse, Error) {
+	var jsonBody ConfirmOrderResponse
+	resp, err := request("POST", "https://api-gateway-dev.omoku.io/confirm-order", "{\"id\": \""+id+"\", \"code\": \""+confirmationCode+"\"}", sessionToken, sessionSecret)
+
+	if err != (Error{}) || resp == nil {
+		log.Println(err)
+		return ConfirmOrderResponse{}, err
 	}
 
 	json.Unmarshal(resp, &jsonBody)

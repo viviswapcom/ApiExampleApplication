@@ -179,6 +179,37 @@ func openWebview(debug bool, appTitle string, webUrl string, order *order.Order)
 			"identifier": {newDetailResponse.Detail.ID},
 		}
 	})
+	w.Bind("getOrderDetails", func() interface{} {
+		return order
+	})
+	w.Bind("initializeNewOrder", func() url.Values {
+		result, err := omokuClient.InitOrder(order.CurrencyPair.Symbol, order.Amount, order.SourcePaymentMethod.Key, order.SourcePaymentDetail.ID, order.TargetPaymentMethod.Key, order.TargetPaymentDetail.ID, order.SessionToken, order.SessionSecret)
+		success := "false"
+		if result.ID != "" {
+			success = "true"
+			order.ID = result.ID
+		}
+
+		return url.Values{
+			"err":     {err.Message},
+			"success": {success},
+			"orderId": {order.ID},
+		}
+	})
+	w.Bind("confirmNewOrder", func(confirmationCode string) url.Values {
+		fmt.Println("Input confirmation code:", confirmationCode)
+
+		result, err := omokuClient.ConnfirmOrder(order.ID, confirmationCode, order.SessionToken, order.SessionSecret)
+		success := "false"
+		if result.Success {
+			success = "true"
+		}
+
+		return url.Values{
+			"err":     {err.Message},
+			"success": {success},
+		}
+	})
 
 	w.Navigate(webUrl)
 	w.SetSize(600, 800, webview.HintNone)

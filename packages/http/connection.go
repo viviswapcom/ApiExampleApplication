@@ -1,9 +1,9 @@
 package http
 
 type ConnectionDetail struct {
-	PaymentMethod     Method      `json:"paymentMethod"`
-	PaymentDetail     Detail      `json:"paymentDetail"`
-	TransactionDetail interface{} `json:"transactionDetail"`
+	PaymentMethod     Method            `json:"paymentMethod"`
+	PaymentDetail     Detail            `json:"paymentDetail"`
+	TransactionDetail map[string]string `json:"transactionDetail"`
 }
 
 type Connection struct {

@@ -3,6 +3,7 @@ package order
 import "github.com/tangleMesh/OmokuApiExampleApplication/packages/http"
 
 type Order struct {
+	ID                  string
 	CurrencyPair        http.CurrencyPair
 	SourcePaymentMethod http.Method
 	TargetPaymentMethod http.Method
